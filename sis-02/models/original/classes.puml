@@ -1,0 +1,51 @@
+@startuml
+title Course Registration - Domain Class Diagram
+
+skinparam classAttributeIconSize 0
+hide circle
+
+class Student {
+    +studentId: Integer
+}
+
+class Course {
+    +courseCode: String
+    +title: String
+}
+
+class CourseOffering {
+    +offeringId: Integer
+    +semester: String
+    +section: String
+    +capacity: Integer
+    +/availablePlaces: Integer
+}
+
+class Enrollment {
+    +enrollmentId: Integer
+}
+
+Course "1" -- "0..*" CourseOffering : has
+Student "1" -- "0..*" Enrollment : makes
+CourseOffering "1" -- "0..*" Enrollment : receives
+
+note right of CourseOffering
+R2 - Capacity constraint:
+capacity > 0
+capacity is an integer
+
+enrollmentCount <= capacity
+
+availablePlaces =
+capacity - enrollmentCount
+end note
+
+note bottom of Enrollment
+R3 - Uniqueness constraint:
+UNIQUE(studentId, offeringId)
+
+One student can have at most
+one Enrollment per offering.
+end note
+
+@enduml
