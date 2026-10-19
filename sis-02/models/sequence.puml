@@ -1,0 +1,99 @@
+@startuml
+title Course Registration - Sequence Diagram
+
+autonumber
+
+actor Student
+boundary "Catalog / Registration UI" as UI
+control "Registration Service" as RS
+database "Database" as DB
+
+== Browse Catalog (US-01) ==
+
+Student -> UI: Select semester
+UI -> RS: getCatalog(semester)
+RS -> DB: getOfferings(semester)
+DB --> RS: Course codes, titles,\nofferings for selected semester,\ncapacity and enrollment counts
+
+RS -> RS: Calculate availablePlaces =\ncapacity - enrollmentCount
+RS --> UI: Catalog data with availablePlaces
+UI --> Student: Display catalog
+
+note over UI, DB
+R1, AC-01, AC-02:
+Only offerings from the selected
+semester are displayed.
+
+Browsing does not reserve a place,
+create an Enrollment, or change
+the enrollment count.
+end note
+
+== Register for Offering (US-02, US-03) ==
+
+Student -> UI: Select offering and register
+UI -> RS: register(studentId, offeringId)
+
+RS -> DB: BEGIN TRANSACTION
+RS -> DB: Lock selected CourseOffering
+
+note over RS, DB
+R2, AC-04:
+The offering lock is held until
+COMMIT or ROLLBACK.
+
+Concurrent requests for the same
+offering are serialized.
+end note
+
+group Atomic validation and registration
+    RS -> DB: Check Enrollment(studentId, offeringId)
+    DB --> RS: Enrollment exists?
+
+    alt Already enrolled (R3, R5, AC-06)
+        RS -> DB: ROLLBACK
+        DB --> RS: Transaction ended
+        RS --> UI: Rejected: "already enrolled"
+
+    else Not already enrolled
+        RS -> DB: Read current capacity and enrollmentCount
+        DB --> RS: capacity, enrollmentCount
+
+        RS -> RS: availablePlaces =\ncapacity - enrollmentCount
+
+        alt availablePlaces <= 0 (R2, R5, AC-05)
+            RS -> DB: ROLLBACK
+            DB --> RS: Transaction ended
+            RS --> UI: Rejected: "course full"
+
+        else availablePlaces > 0 (R2, R3, R4, AC-03)
+            RS -> DB: Create one Enrollment(studentId, offeringId)
+            DB --> RS: Enrollment created successfully
+
+            RS -> DB: COMMIT
+            DB --> RS: Commit successful
+
+            RS -> RS: Updated availablePlaces =\ncapacity - (enrollmentCount + 1)
+            RS --> UI: Registration confirmation\nwith updated availability
+        end
+    end
+end
+
+UI --> Student: Display result
+
+note over RS, DB
+AC-04:
+If two different students request
+the last available place, only one
+transaction can create an Enrollment.
+
+After the first transaction commits,
+the next request sees the updated count
+and receives "course full".
+
+R5:
+Rejected requests create no Enrollment
+and leave enrollmentCount unchanged.
+end note
+
+@enduml
