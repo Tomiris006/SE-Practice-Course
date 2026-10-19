@@ -1,8 +1,8 @@
 # Lab report — Practice #02: The Prompt Is an Engineering Input
 
-**Name:** Yernur
+**Name:** Tomiris
 **Group:** Monday 16:00 - 19:00
-**Date:** 19.09.26
+**Date:** 19.10.26
 
 > Fill in every section. **Do not delete or renumber the headings** — the grading pass reads them
 > by number. If something did not happen, write "did not happen" and why; an empty section and a
