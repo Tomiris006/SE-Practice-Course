@@ -14,10 +14,10 @@ schema: 1
 assignment: "sis-02"
 
 student:
-  name: "Yernur"
-  student_id: "25B032075"
+  name: "Tomiris"
+  student_id: "25B032089"
   group: "Monday 16:00-19:00"
-  github: "amanqoss"
+  github: "Tomiris006"
 
 assistant:
   tool: "ChatGPT"
