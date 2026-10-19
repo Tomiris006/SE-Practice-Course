@@ -1,0 +1,46 @@
+# SIS #01 — the declaration. FACTS ONLY: every explanation stays in report.md.
+#
+# Fill this in LAST, after your final run of the checker, then validate it:
+#     python tests/check_report.py
+#     python tests/validate_submission.py
+#
+# Your checker numbers are re-run by the instructor at the commit you name below.
+# Numbers that do not match what your repository produces cost the whole workflow
+# criterion. A FAIL you report honestly — here and under known_fails — costs nothing extra.
+#
+# Format rules: two spaces for indentation, never tabs. Leave the keys exactly as they are.
+
+schema: 1
+assignment: "sis-01"
+
+student:
+  name: "Tomiris"
+  student_id: "25B032089"
+  group: "Monday 16:00-19:00"
+  github: "Tomiris006"
+
+topic: "1.10"
+
+assistant:
+  tool: "ChatGPT"
+  model: "GPT-6"
+
+checker:
+  pass: 24
+  fail: 0
+  error: 0
+  commit: "bd3ee3c"
+
+counts:
+  main_words: 1140
+  reflection_words: 168
+  exchanges: 3
+  verified_claims: 1
+  revisions: 6
+
+decisions:
+  keep: 0
+  qualify: 2
+  reject: 0
+
+known_fails: []
