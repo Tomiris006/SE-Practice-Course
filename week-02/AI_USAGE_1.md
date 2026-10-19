@@ -43,5 +43,5 @@ Writing your own text with an AI is permitted at Level D **and must be declared 
 **Anything I accepted from the AI without fully understanding it:**
 
 
-Signed: <Yernur>
+Signed: <Tomiris>
 Date: 19.09.26
