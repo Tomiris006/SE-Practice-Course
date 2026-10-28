@@ -1,0 +1,74 @@
+@startuml
+title Course Registration - Sequence Diagram
+
+autonumber
+
+actor Student
+boundary "Catalog / Registration UI" as UI
+control "Registration Service" as RS
+database "Database" as DB
+
+== Browse Catalog (US-01) ==
+
+Student -> UI: Select semester
+UI -> RS: getCatalog(semester)
+RS -> DB: Fetch courses and offerings
+DB --> RS: Course codes, titles,\nofferings, available places
+RS --> UI: Catalog data
+UI --> Student: Display catalog
+
+note over UI, DB
+AC-01, AC-02:
+Browsing does not reserve a place
+or create an Enrollment.
+end note
+
+== Register for Offering (US-02, US-03) ==
+
+Student -> UI: Select offering and register
+UI -> RS: register(studentId, offeringId)
+
+RS -> DB: BEGIN TRANSACTION
+RS -> DB: Lock selected offering
+
+group Atomic validation and registration
+    RS -> DB: Check Enrollment(studentId, offeringId)
+    DB --> RS: Enrollment exists?
+
+    alt Already enrolled (AC-06)
+        RS -> DB: ROLLBACK
+        RS --> UI: "already enrolled"
+
+    else Not enrolled
+        RS -> DB: Recheck current available places
+        DB --> RS: Current availability
+
+        alt No places available (AC-05)
+            RS -> DB: ROLLBACK
+            RS --> UI: "course full"
+
+        else Place available (AC-03)
+            RS -> DB: Create exactly one Enrollment
+            RS -> DB: Update availability
+            RS -> DB: COMMIT
+            RS --> UI: Registration confirmation
+        end
+    end
+end
+
+UI --> Student: Display result
+
+note over RS, DB
+AC-04:
+Locking serializes competing requests
+for the same offering.
+
+If two students request the last place,
+only one transaction can succeed.
+The other receives "course full".
+
+Rejected requests create no Enrollment
+and do not change enrollment count.
+end note
+
+@enduml
