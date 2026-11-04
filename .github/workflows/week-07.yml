@@ -38,6 +38,8 @@ jobs:
       - name: Run mutation trials (restores source after each trial)
         working-directory: week-07
         run: python tests/run_mutants.py
+      - name: Remove installed dependencies before checking committed source
+        run: rm -rf week-07/app/node_modules
       - name: Run the course suite checker
         working-directory: week-07
         run: python tests/check_suite.py

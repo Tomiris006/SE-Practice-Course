@@ -1,59 +1,65 @@
 # Week 07 — Lab report
 
 **Name:** Tomiris Erzhankyzy
-**Group:** not supplied
+**Group:** not provided
 **Date:** 4 November 2026
+
+---
 
 ## 1. Setup
 
 | | |
 | --- | --- |
-| Project I continue | starter (provided starter; no Week 06 branch/project was present in the inspected repository) |
-| Bolt project link | not-shared — starter used |
-| Assistant that generated the tests | ChatGPT |
-| Exact model | GPT-6 |
-| Where tests were run | Local Node.js 22 environment; Vitest install attempted but npm registry DNS failed |
-| Vitest version | not obtained — runner did not start |
-| Test command | `npx vitest run` (blocked before execution) |
+| Project I continue (week-06 or starter) | starter - no Week 06 project/branch was available in the inspected repository |
+| Bolt project link (or not shared) | not-shared - the provided starter was used |
+| Assistant that generated the tests (tool) | ChatGPT |
+| Exact model (with its version, or not displayed) | GPT-6 |
+| Where I ran the tests | GitHub Actions hosted Ubuntu runner, Node.js 22.23.4 |
+| Vitest version (the RUN v… line) | 3.2.7 |
+| Test command | First: npx vitest run --root .. suites/first/booking.test.ts; final: npm test |
 
 ## 2. Task 1 — baseline and the booking function
 
+**Before editing:** where did the booking decision live in the project you started from?
+
 | | |
 | --- | --- |
-| File and function before extraction | `app/src/App.tsx`, inside `check()` |
-| Inputs | start/end/current time converted to minutes, blocked flag, selected room bookings |
-| Return | boolean |
-| Page use | `check()` evaluated rules and stored result using `setResult(ok)` |
+| File and function | app/src/App.tsx, inside check() |
+| Its inputs | start and end converted to minutes, current time now, blocked flag, and selected room.bookings |
+| What it returned | Boolean decision stored in ok |
+| How the page used it | check() calculated ok and called setResult(ok), which rendered Available or Unavailable |
 
-The starter originally kept the availability decision inside `check()` in `App.tsx`. I moved the same interval validation, current-time check, 120-minute limit, blocked-room rejection and overlap loop into exported `canBook` in `app/src/booking.ts`. The page imports `canBook` from `./booking` and passes numeric minutes, the blocked flag and selected room bookings. Time conversion, missing-field validation and visible feedback remain in the page. I retained the original comparisons, including strict overlap comparisons, so touching endpoints remain allowed. The extraction itself was intended not to change the booking decision.
+**What I changed to extract canBook.**
+
+The starter originally kept the booking decision inside check() in App.tsx. I moved the interval bounds check, start-after-now check, 120-minute duration limit, blocked-room rejection, and overlap loop into the exported canBook function in app/src/booking.ts. The page now imports canBook from ./booking and passes start, end, now, blocked, and the selected room's bookings. The HH:MM conversion, required-field checks, validation message, and result rendering remain in App.tsx. The overlap comparison remains strict (< and >), so intervals that only touch at an endpoint are still allowed. This is an extraction of the same decision, not an intentional change to the booking rules.
 
 ## 3. Task 2 — the test plan
 
-Default fixture: `now=540`, `blocked=false`, `bookings=[{start:600,end:660}]`.
+Default fixture: now = 540, blocked = false, bookings = [{ start: 600, end: 660 }], fresh for every test.
 
-| ID | Candidate / changed input | Expected | AC | Reason |
+| ID | Candidate / changed input | Expected | AC | Reason (in my words) |
 | --- | --- | --- | --- | --- |
-| T01 | 660–720 touching after | true | AC4 | Existing booking ends at 660; candidate starts at 660, so they touch but do not overlap. |
-| T02 | 540–570 starts now | false | AC1 | Start equals now; AC1 requires a later start. |
-| T03 | 720–720 zero duration | false | AC1 | Start equals end; interval is not positive. |
-| T04 | 750–720 reversed | false | AC1 | End is earlier than start. |
-| T05 | 1380–1441 past day end | false | AC1 | End exceeds 1440. |
-| T06 | 720–840 exactly 120 minutes | true | AC2 | AC2 rejects durations longer than 120, not exactly 120. |
-| T07 | 720–841 121 minutes | false | AC2 | Duration exceeds 120. |
-| T08 | 570–600 touching before | true | AC4 | Candidate ends exactly when existing booking starts. |
-| T09 | 630–690 partial overlap | false | AC4 | The intervals share 630–660. |
-| T10 | 570–690 contains booking | false | AC4 | Candidate contains the full 600–660 booking. |
-| T11 | 615–645 inside booking | false | AC4 | Candidate lies inside the existing booking. |
-| T12 | 600–660 identical | false | AC4 | Candidate occupies the same interval. |
-| T13 | 660–720, blocked=true | false | AC3 | Blocked room must reject the request. |
-| T14 | 630–690, bookings=[] | true | AC4 | No existing booking overlaps the request. |
-| AC5 | Available request; compare bookings before/after | true, unchanged | AC5 | Availability check must not mutate existing data. |
-| X1 | 1320–1440 ends exactly at 24:00 | true | AC1, AC2 | End equals 1440 and duration is exactly 120 minutes. |
-| X2 | 660–780 with bookings 600–660 and 780–840 | true | AC4 | Candidate touches both bookings but overlaps neither. |
+| T01 | 660–720 (touching after) | true | AC4 | The existing interval ends at 660, and the candidate begins at 660; half-open intervals touch but do not overlap. |
+| T02 | 540–570 (starts now) | false | AC1 | AC1 requires the start to be later than now, not equal to it. |
+| T03 | 720–720 (zero duration) | false | AC1 | Start and end are equal, so the interval has no positive duration. |
+| T04 | 750–720 (reversed) | false | AC1 | The end is earlier than the start, violating start < end. |
+| T05 | 1380–1441 (past day end) | false | AC1 | 1441 is beyond the maximum allowed end value of 1440. |
+| T06 | 720–840 (120 minutes) | true | AC2 | The duration is exactly 120 minutes; AC2 rejects only durations longer than 120. |
+| T07 | 720–841 (121 minutes) | false | AC2 | 841 minus 720 is 121 minutes, which is longer than the allowed limit. |
+| T08 | 570–600 (touching before) | true | AC4 | The candidate ends at 600, exactly where the existing booking begins, so there is no shared time. |
+| T09 | 630–690 (partial overlap) | false | AC4 | The candidate overlaps the existing booking from 630 through 660. |
+| T10 | 570–690 (contains booking) | false | AC4 | The candidate covers the whole existing 600–660 booking, so the intervals overlap. |
+| T11 | 615–645 (inside booking) | false | AC4 | The candidate is entirely inside the existing 600–660 booking. |
+| T12 | 600–660 (identical interval) | false | AC4 | The candidate and existing booking occupy exactly the same interval. |
+| T13 | 660–720, blocked = true | false | AC3 | Even though the time interval is free, a blocked room cannot be booked. |
+| T14 | 630–690, bookings = [] | true | AC4 | With no existing bookings, there is no interval to overlap. |
+| AC5 | Available request; compare bookings before and after | true, data unchanged | AC5 | The check must return Available and leave the original bookings data exactly as it was. |
+| X1 | 1320–1440 (ends exactly at 24:00) | true | AC1, AC2 | 1440 is the permitted upper boundary, and this interval is exactly 120 minutes long. |
+| X2 | 660–780 with bookings 600–660 and 780–840 | true | AC4 | The candidate touches the end of the first booking and the start of the second, but shares no time with either. |
 
-## 4. Task 3 — generation prompt and first suite
+## 4. Task 3 — the generation prompt and the first suite
 
-Prompt used:
+**Prompt used (the deck prompt with Vitest and the case plan):**
 
 ```text
 Generate tests for the existing booking function using Vitest. Use AC1–AC6 and the reviewed case table below.
@@ -62,35 +68,68 @@ Import the real function used by the page. Keep its code unchanged. Use fixed ti
 
 Return the test file, run command, and AC mapping. Flag unclear requirements. We will run the tests ourselves.
 
-[The complete case table from section 3 was supplied after this prompt.]
+Case table:
+T01 660-720 => true (AC4)
+T02 540-570 => false (AC1)
+T03 720-720 => false (AC1)
+T04 750-720 => false (AC1)
+T05 1380-1441 => false (AC1)
+T06 720-840 => true (AC2)
+T07 720-841 => false (AC2)
+T08 570-600 => true (AC4)
+T09 630-690 => false (AC4)
+T10 570-690 => false (AC4)
+T11 615-645 => false (AC4)
+T12 600-660 => false (AC4)
+T13 660-720 with blocked=true => false (AC3)
+T14 630-690 with bookings=[] => true (AC4)
+AC5: Available request; bookings unchanged.
+X1 1320-1440 => true (AC1, AC2)
+X2 660-780 with bookings 600-660 and 780-840 => true (AC4)
+Default fixture: now=540, blocked=false, bookings=[{start:600,end:660}].
 ```
 
-The first suite was saved as `suites/first/booking.test.ts`; it has 17 named cases and was retained separately from the improved suite. Run command requested: `npx vitest run`. AC mapping: T01/T08–T12/T14/X2 → AC4; T02–T05/X1 → AC1; T06/T07 → AC2; T13 → AC3; AC5 → unchanged bookings. The handout leaves malformed existing-booking behavior unspecified.
+**Assistant answer:**
+
+```text
+Test file: suites/first/booking.test.ts
+Run command: npx vitest run --root .. suites/first/booking.test.ts
+Final suite location: app/src/booking.test.ts
+AC mapping: T01, T08-T12 and T14 and X2 cover AC4; T02-T05 and X1 cover AC1; T06-T07 cover AC2; T13 covers AC3; AC5 compares bookings before and after an Available call.
+Unclear requirement flagged: the handout does not define the result for an invalid existing booking. The function's actual behavior must be called and declared in submission.yml.
+The first suite was retained in suites/first/booking.test.ts. Its AC5 snapshot was later strengthened in the improved suite.
+```
+
+The first suite was saved before changes. The improved suite is a separate file beside booking.ts.
 
 ## 5. Task 4 — review of the first suite
 
-| # | Test / part | Weakness or finding | Decision | AC / reason |
+| # | Test or part of the suite | What is weak or wrong | Decision: accept / revise / reject | AC or reason |
 | --- | --- | --- | --- | --- |
-| 1 | T01–T14 | Separate cases import the real function and assert exact boolean decisions. | accept | AC1–AC4; expected values follow criteria. |
-| 2 | AC5 in first suite | Shallow array copy retains references to nested booking objects. | revise | AC5 requires existing booking data unchanged; improved suite uses `structuredClone`. |
-| 3 | X2 | Tests a free interval touching two separate bookings. | accept | AC4 allows touching endpoints. |
+| 1 | T01-T14 | The tests use the real canBook import and exact boolean expectations based on the case plan. | accept | AC1-AC4 define each expected decision; exact assertions are stronger than checking only that no exception occurred. |
+| 2 | AC5 in first suite | A shallow array copy would still share references to nested booking objects and could miss an in-place object mutation. | revise | AC5 requires existing booking data to remain unchanged; the final suite uses structuredClone to make an independent snapshot. |
+| 3 | X2 | The extra case checks a free interval that touches two different bookings. | accept | AC4 allows touching endpoints; this reaches two boundaries in one scenario without overlap. |
 
 ## 6. Task 5 — running, diagnosing, improving
 
-### 6.1 First run
+### 6.1 The first run
 
-Vitest did not start. Dependency installation failed before the runner could execute:
+Real GitHub Actions Vitest output (Vitest 3.2.7):
 
 ```text
-npm error code EAI_AGAIN
-npm error syscall getaddrinfo
-npm error errno EAI_AGAIN
-npm error request to https://registry.npmjs.org/@types%2freact failed, reason: getaddrinfo EAI_AGAIN
+RUN v3.2.7 /home/runner/work/SE-Practice-Course/SE-Practice-Course/week-07
+✓ suites/first/booking.test.ts (17 tests)
+Test Files 1 passed (1)
+Tests 17 passed (17)
 ```
 
-No Vitest `RUN v…` line or `Tests` summary exists; no test assertion failure is claimed. Diagnosis: npm registry DNS/network access prevented dependency installation. This is an environment/setup issue, not a test repair or implementation fix.
+**Each failure, diagnosed:**
 
-### 6.2 Improvement prompt
+| Failing test | Observed failure | First check | Test repair or implementation fix? | Action taken |
+| --- | --- | --- | --- | --- |
+| none | The first suite completed with 17 passed and 0 failed. | Confirmed the run selected suites/first/booking.test.ts and imported the real booking module. | No repair required for the first run. | Kept the original suite unchanged and reviewed its AC5 snapshot separately. |
+
+### 6.2 The improvement prompt
 
 ```text
 Review this test suite against AC1–AC6 and our case table. Identify incorrect expectations, weak assertions, duplicated cases, and missing boundaries.
@@ -99,69 +138,99 @@ For each proposed change, explain the requirement and the defect it could detect
 
 Use the actual failure output below. Separate test repairs from implementation fixes.
 
-Actual output: npm install could not resolve registry.npmjs.org (EAI_AGAIN); Vitest did not start, so there is no assertion output to analyze.
+Actual first-run output:
+RUN v3.2.7
+Test Files 1 passed (1)
+Tests 17 passed (17)
 ```
 
-Improvement: retained all expected decisions because they follow the acceptance criteria. Replaced the AC5 shallow array snapshot in the final suite with `structuredClone(f.bookings)`, which also copies nested booking objects. No implementation correction based on a Vitest failure was made because Vitest did not run.
+**Review answer and action taken:**
 
-### 6.3 Final run
+The expected decisions were retained because they follow AC1–AC4. No implementation failure appeared in the first run. The concrete improvement was the AC5 snapshot: the first suite used a shallow array copy, while the final suite uses structuredClone(f.bookings) before calling canBook and compares the original bookings afterwards. The improved suite still has one individually named test for every T01-T14 case, plus AC5, X1 and X2. The tests import the real ./booking module, use a fixed numeric now value, and do not mock the function.
+
+### 6.3 The final run
+
+Real GitHub Actions output of the committed final suite:
 
 ```text
-NOT RUN — Vitest dependency installation was blocked by npm registry DNS resolution. No genuine final Vitest output is available.
+RUN v3.2.7 /home/runner/work/SE-Practice-Course/SE-Practice-Course/week-07/app
+✓ src/booking.test.ts (17 tests)
+Test Files 1 passed (1)
+Tests 17 passed (17)
 ```
+
+The TypeScript production build also completed successfully with Vite 5.4.21.
 
 ## 7. Task 6 — deliberate defects
 
-| Trial | Intentional change | Result | Expected detector | Evidence |
+| Trial | Intentional change | Detected / Survived | Failing test ID(s) | If it survived: why, and what you added |
 | --- | --- | --- | --- | --- |
-| M1 | Reject duration >=120 | Not run | T06 | Vitest unavailable; no mutant result claimed. |
-| M2 | Treat touching endpoints as overlap | Not run | T01 or T08 | Vitest unavailable; no mutant result claimed. |
-| M3 | Remove blocked-room rejection | Not run | T13 | Vitest unavailable; no mutant result claimed. |
+| M1 | Reject duration >= 120 instead of > 120 | Detected | T06, X1, X2 | Not applicable - the exact-120-minute cases failed as expected. |
+| M2 | Treat touching endpoints as an overlap | Detected | T01, T08, AC5, X2 | Not applicable - the touching-endpoint cases failed as expected. |
+| M3 | Remove the blocked-room rejection | Detected | T13 | Not applicable - the blocked-room case failed as expected. |
 
-The mutation runner `tests/run_mutants.py` is included and restores the original source in a `finally` block. It must be run in an environment where dependencies install. The mutants have not been executed here.
+**Real mutant run summaries (Vitest 3.2.7):**
+
+```text
+RUN v3.2.7
+M1: T06 AC2: exactly 120 minutes; X1 AC1: end exactly at 24:00; X2 AC4: free interval touches two bookings
+Tests 3 failed | 14 passed (17)
+M1: DETECTED
+```
+
+```text
+RUN v3.2.7
+M2: T01 AC4: touching after; T08 AC4: touching before; AC5: available call preserves bookings; X2 AC4: free interval touches two bookings
+Tests 4 failed | 13 passed (17)
+M2: DETECTED
+```
+
+```text
+RUN v3.2.7
+M3: T13 AC3: blocked room
+Tests 1 failed | 16 passed (17)
+M3: DETECTED
+```
+
+The mutation runner restored the original booking.ts after every trial in a finally block. The subsequent final suite run passed all 17 tests.
 
 ## 8. Task 7 — manual UI checks
 
-The page includes current-time and interval inputs, an end-of-day checkbox, a blocked-room checkbox and a visible result. Browser checks were not performed because Vite dependencies could not be installed. No UI screenshots are claimed.
+These checks still require a person to interact with the page in a browser. They were not performed by the GitHub Actions unit-test runner. No manual screenshots are claimed yet.
 
-| # | Action | Expected | AC | Observation | Result |
+| # | Action | Expected observation | AC | What I observed | Pass / Fail / Not testable |
 | --- | --- | --- | --- | --- | --- |
-| U1 | Check 11:00–12:00, unblocked | Available | AC5 | Not performed; app not launched | Not testable |
-| U2 | Enable blocked and check again | Unavailable | AC3, AC5 | Not performed; app not launched | Not testable |
-| U3 | Clear required input and submit | Clear validation feedback | AC6 | Not performed; app not launched | Not testable |
-| U4 | Narrow phone width | Usable controls and result | AC6 | Not performed; app not launched | Not testable |
-| U5 | Repeat on same data | Existing bookings unchanged | AC5 | Not performed; app not launched | Not testable |
+| U1 | Check 11:00–12:00, unblocked | Available, with the fixed sample booking | AC5 | Not performed yet; browser interaction and screenshot still required. | Not testable |
+| U2 | Enable blocked, then check again | Unavailable replaces the earlier result | AC3, AC5 | Not performed yet; browser interaction and screenshot still required. | Not testable |
+| U3 | Clear a required input and submit | Understandable validation feedback | AC6 | Not performed yet; browser interaction and screenshot still required. | Not testable |
+| U4 | Use a narrow (phone) width | Controls and result remain usable | AC6 | Not performed yet; phone-width browser screenshot still required. | Not testable |
+| U5 | Repeat the checks on the same data | Existing bookings remain unchanged | AC5 | Not performed yet; browser interaction and screenshot still required. | Not testable |
 
 ## 9. Comparison and what still fails
 
-### 9.1 Checks kept as FAIL / ERROR
+### 9.1 Checks I am keeping as FAIL or ERROR
 
 | Check | Why it stays |
 | --- | --- |
-| R1 | No genuine first Vitest run output. |
-| R2 | No genuine final Vitest run output. |
-| R3 | Vitest version unavailable because runner did not start. |
-| M1 | Mutant not executed; T06 is expected detector only. |
-| M2 | Mutant not executed; T01/T08 are expected detectors only. |
-| M3 | Mutant not executed; T13 is expected detector only. |
-| M4 | Three real mutant run outputs are unavailable. |
-| U1 | Five browser screenshots were not captured. |
-| U2 | Portrait phone-width screenshot is missing. |
+| U1 | The five required manual browser screenshots have not yet been captured; no screenshot evidence is being invented. |
+| U2 | The required ui-4 portrait screenshot at approximately 375 px has not yet been captured. |
 
-### 9.2 First and improved suites
+### 9.2 Original and improved suites
 
 | Measure | First suite | Improved suite |
 | --- | --- | --- |
-| Executed / passed / failed | Vitest not run | Vitest not run |
-| Requirements represented | T01–T14, AC5, X1, X2 | T01–T14, AC5, X1, X2 |
-| Mutants detected | Not tested | Not tested; expected detectors T06, T01/T08, T13 |
-| Review decisions | 2 accepted, 1 revised | AC5 assertion strengthened |
-| Limitations | AC5 shallow copy; no Vitest execution | Vitest, mutation and manual UI evidence outstanding |
+| Executed / passed / failed | 17 executed / 17 passed / 0 failed | 17 executed / 17 passed / 0 failed |
+| Requirements with meaningful tests (AC IDs and gaps) | AC1-AC4, AC5, X1 and X2; exact boolean expectations and fixed time | AC1-AC4, AC5, X1 and X2; AC5 now takes a deep snapshot |
+| Selected mutants detected | T06 detects M1, T01/T08 detect M2, T13 detects M3 | M1, M2 and M3 all detected |
+| Accepted / revised / rejected tests | 2 accepted, 1 revised | AC5 revised; all expected decisions retained |
+| Remaining limitations | Shallow AC5 snapshot; no manual UI evidence | Manual UI interaction and five screenshots still outstanding |
 
 ### 9.3 What no AC decides
 
-With `bookings=[{start:700,end:650}]` and request 660–720, the current function returns true: the overlap expression `660 < 650 && 720 > 700` is false. No AC defines behavior for an invalid existing booking. Assumption: `returns-true`.
+I called canBook with request 660-720 and bookings=[{start:700,end:650}]. It returns true: the overlap check is start < booking.end && end > booking.start, which becomes 660 < 650 && 720 > 700, so the first comparison is false. None of AC1-AC6 defines behavior for an invalid existing booking. I therefore record the observed behavior as returns-true, not as a new requirement.
 
 ## 10. Conclusion (120–180 words)
 
-The first suite covered the required booking cases, but its AC5 check used a shallow copy of the bookings array. That comparison could miss an in-place change to a booking object, because the saved array would still point to the same object. I revised the check to use structuredClone, while keeping the expected results tied to AC1–AC4 rather than changing them to match the implementation. The test files include boundary cases for touching intervals, the exact 120-minute limit, the end of the day, and two existing bookings. A green test run would only show that the assertions pass for the cases executed; it would not prove that the page is usable on a phone or that every possible booking state is correct. This work is not yet fully verified: Vitest could not be installed because the npm registry could not be resolved, the three mutants were not run, and the manual UI screenshots remain outstanding.
+The first suite covered the fourteen planned cases, but its AC5 check used a shallow copy of the bookings array. That could miss a mutation inside an existing booking object because the copied array would still point to the same object. The final suite uses structuredClone for an independent snapshot. Both the first and improved suites passed all 17 tests. The mutation trials showed that the suite detects three deliberate defects: rejecting exactly 120 minutes, treating touching endpoints as overlaps, and ignoring a blocked room. A green unit-test run proves only that the tested decisions match their expected values for these inputs. It does not prove that the page is usable at phone width or that validation messages are clear. The remaining limitation is the manual UI evidence: the five browser checks and portrait screenshot have not yet been performed. I need to complete those checks before treating the submission as fully verified.
+
+**Student action required:** rewrite this conclusion in your own words before final grading; the course handout explicitly asks for the student's own explanation.

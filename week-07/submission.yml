@@ -1,35 +1,42 @@
-# Week 07 declaration — values to verify before submission
 schema: 1
 week: "07"
+
 student:
   name: "Tomiris Erzhankyzy"
   student_id: "25B032089"
   github: "Tomiris006"
+
 assistant:
   tool: "ChatGPT"
   model: "GPT-6"
+
 project:
   baseline: "starter"
   bolt_url: "not-shared"
-  vitest: "NOT_RUN"
+  vitest: "3.2.7"
+
 counts:
   tests_first: 17
   tests_final: 17
   first_run_failed: 0
   review_decisions: 3
-  mutants_detected: 0
+  mutants_detected: 3
+
 checker:
-  pass: 24
-  fail: 7
-  error: 2
+  pass: 0
+  fail: 0
+  error: 0
   commit: "PENDING"
-  known_fails: [R1, R2, R3, M1, M2, M3, M4, U1, U2]
+  known_fails: [U1, U2]
+
 assumptions:
   invalid_existing_booking: "returns-true"
+
 review_findings:
-  - "T01: exact true assertion verifies touching endpoint behavior under AC4"
-  - "T06: exactly 120 minutes must remain allowed under AC2"
-  - "AC5: shallow array copy did not protect nested booking objects"
+  - "T01: strict interval comparison allows a candidate to touch the existing booking under AC4"
+  - "T06: AC2 allows exactly 120 minutes and detects the >= 120 mutant M1"
+  - "AC5: structuredClone gives an independent snapshot of existing booking objects"
+
 honesty:
   first_suite_unedited: "yes"
   outputs_unedited: "yes"
