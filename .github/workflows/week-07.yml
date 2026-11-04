@@ -44,5 +44,6 @@ jobs:
         working-directory: week-07
         run: python tests/check_suite.py
       - name: Run submission declaration validator
+        if: always()
         working-directory: week-07
         run: python tests/validate_submission.py
