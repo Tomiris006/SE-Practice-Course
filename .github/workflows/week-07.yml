@@ -1,0 +1,47 @@
+name: Week 07 verification
+
+on:
+  push:
+    branches: [week-07]
+  pull_request:
+    branches: [main]
+    paths:
+      - "week-07/**"
+      - ".github/workflows/week-07.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: week-07/app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: week-07/app/package-lock.json
+      - name: Install dependencies
+        run: npm install
+      - name: Run the first suite unchanged
+        run: npx vitest run ../../week-07/suites/first/booking.test.ts
+      - name: Run the improved suite
+        run: npm test
+      - name: Build the application
+        run: npm run build
+      - name: Run mutation trials (restores source after each trial)
+        run: python ../tests/run_mutants.py
+        working-directory: week-07
+      - name: Run the course suite checker
+        run: python tests/check_suite.py
+        working-directory: week-07
+      - name: Run submission declaration validator
+        run: python tests/validate_submission.py
+        working-directory: week-07
