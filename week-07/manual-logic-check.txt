@@ -1,0 +1,8 @@
+Node.js v22 native TypeScript-strip verification of the extracted function:
+T01-T14: PASS
+AC5: PASS (bookings unchanged)
+X1: PASS
+X2: PASS
+Summary: 17/17 logic checks passed.
+Invalid existing booking assumption: returns-true.
+Note: this is a direct logic check, not a Vitest run.
