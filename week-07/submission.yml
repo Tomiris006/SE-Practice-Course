@@ -3,7 +3,7 @@ schema: 1
 week: "07"
 student:
   name: "Tomiris Erzhankyzy"
-  student_id: "NEEDS_STUDENT_ID"
+  student_id: "25B032089"
   github: "Tomiris006"
 assistant:
   tool: "ChatGPT"
