@@ -1,0 +1,44 @@
+schema: 1
+week: "07"
+
+student:
+  name: "Tomiris Erzhankyzy"
+  student_id: "25B032089"
+  github: "Tomiris006"
+
+assistant:
+  tool: "ChatGPT"
+  model: "GPT-6"
+
+project:
+  baseline: "starter"
+  bolt_url: "not-shared"
+  vitest: "3.2.7"
+
+counts:
+  tests_first: 17
+  tests_final: 17
+  first_run_failed: 0
+  review_decisions: 3
+  mutants_detected: 3
+
+checker:
+  pass: 31
+  fail: 0
+  error: 2
+  commit: "766d295"
+  known_fails: [U1, U2]
+
+assumptions:
+  invalid_existing_booking: "returns-true"
+
+review_findings:
+  - "T01: strict interval comparison allows a candidate to touch the existing booking under AC4"
+  - "T06: AC2 allows exactly 120 minutes and detects the >= 120 mutant M1"
+  - "AC5: structuredClone gives an independent snapshot of existing booking objects"
+
+honesty:
+  first_suite_unedited: "yes"
+  outputs_unedited: "yes"
+  mutants_restored: "yes"
+  ai_usage_disclosed: "yes"
